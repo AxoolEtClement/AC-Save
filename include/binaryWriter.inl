@@ -1,5 +1,4 @@
 #pragma once
-#include "binaryWriter.hpp"
 
 inline void BinaryWriter::WriteU32(std::uint32_t value)
 {
@@ -26,5 +25,18 @@ inline void BinaryWriter::WriteString(std::string_view text)
     for (const char& value : text)
     {
         WriteU8(static_cast<std::uint8_t>(value));
+    }
+}
+
+inline void BinaryWriter::Save(const std::string& path) const
+{
+    std::ofstream file(path, std::ios::binary | std::ios::trunc);
+
+    if (!file)
+        throw std::runtime_error("Cannot open file");
+
+    for (std::byte byte : buffer)
+    {
+        file.put(static_cast<char>(std::to_integer<unsigned char>(byte)));
     }
 }
