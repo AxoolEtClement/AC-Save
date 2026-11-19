@@ -33,9 +33,10 @@ namespace AC_Save
         double readF64();
 
         Bytes readBytes();
-        std::string& readString();
+        std::string readString();
     private:
-        template <std::unsigned_integral T> T readLE();
+        template<std::unsigned_integral T>
+        T readUI();
         Bytes m_bytes{};
         std::size_t m_cursor{};
     };
