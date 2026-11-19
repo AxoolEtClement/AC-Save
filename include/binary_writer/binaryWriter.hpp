@@ -50,7 +50,7 @@ namespace AC_Save
 
         [[nodiscard]]std::size_t size() const { return buffer.size(); }
         [[nodiscard]]std::span<const std::byte> view() const { return buffer; }
-        void reserve(std::size_t n) { buffer.reserve(n); }
+        void reserve(std::size_t const n) { buffer.reserve(n); }
 
     private:
 
