@@ -44,6 +44,21 @@ namespace AC_Save
     inline float BinaryReader::readF32() { return std::bit_cast<float>(readUI<uint32_t>()); }
     inline double BinaryReader::readF64() { return std::bit_cast<double>(readUI<uint64_t>()); }
 
+    inline Bytes BinaryReader::readBytes()
+    {
+        std::uint32_t byteSize{ readUI<std::uint32_t>() };
+        if (m_cursor > m_bytes.size() || m_bytes.size() - m_cursor < byteSize)
+            throw std::runtime_error("File is too small to read data of size " + std::to_string(byteSize));
+
+        Bytes result{};
+        result.resize(byteSize);
+        for (std::uint32_t i = 0; i < byteSize; ++i)
+        {
+            result[i] = m_bytes[m_cursor++];
+        }
+        return result;
+    }
+
     inline std::string BinaryReader::readString()
     {
         std::uint32_t byteSize{ readUI<std::uint32_t>() };

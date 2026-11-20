@@ -2,7 +2,6 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
-#include <span>
 #include <string>
 #include <vector>
 
