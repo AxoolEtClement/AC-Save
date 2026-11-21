@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <type_traits>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -60,6 +61,16 @@ namespace AC_Save
             w.writeU32(static_cast<std::uint32_t>(items.size()));
             for (const T& it : items)
                 Serializer<T>::write(w, it);
+        }
+    };
+
+    template <class E> requires std::is_enum_v<E>
+    struct Serializer<E>
+    {
+        static void write(BinaryWriter& w, E v)
+        {
+            using U = std::underlying_type_t<E>;
+            Serializer<U>::write(w, static_cast<U>(v));
         }
     };
 }

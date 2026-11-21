@@ -23,10 +23,17 @@ set_target_properties(AC-saveLib PROPERTIES LINKER_LANGUAGE CXX)
 
 add_executable(AC-saveDemo ${SOURCES} ${HEADERS})
 
-target_include_directories(AC-saveLib PRIVATE
+target_include_directories(AC-saveLib PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 target_include_directories(AC-saveDemo PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+
+include(CTest)
+if(BUILD_TESTING)
+    add_executable(AC-saveTests tests/archive_tests.cpp)
+    target_include_directories(AC-saveTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    add_test(NAME archive_tests COMMAND AC-saveTests)
+endif()
