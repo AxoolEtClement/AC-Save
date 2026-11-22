@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <type_traits>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -23,25 +24,25 @@ namespace AC_Save
     void write(BinaryWriter& w, const T& v) { Serializer<T>::write(w, v);}
 
     // unsinged Serializing :
-    template <> struct Serializer<std::uint8_t>{static void write(BinaryWriter& w, std::uint8_t v) {w.writeU8(v);}};
-    template <> struct Serializer<std::uint16_t>{static void write(BinaryWriter& w, std::uint16_t v) {w.writeU16(v);}};
-    template <> struct Serializer<std::uint32_t>{static void write(BinaryWriter& w, std::uint32_t v) {w.writeU32(v);}};
-    template <> struct Serializer<std::uint64_t>{static void write(BinaryWriter& w, std::uint64_t v) {w.writeU64(v);}};
+    template <> struct Serializer<std::uint8_t>{static void write(BinaryWriter& w, std::uint8_t const v) {w.writeU8(v);}};
+    template <> struct Serializer<std::uint16_t>{static void write(BinaryWriter& w, std::uint16_t const v) {w.writeU16(v);}};
+    template <> struct Serializer<std::uint32_t>{static void write(BinaryWriter& w, std::uint32_t const v) {w.writeU32(v);}};
+    template <> struct Serializer<std::uint64_t>{static void write(BinaryWriter& w, std::uint64_t const v) {w.writeU64(v);}};
 
     // singed Serializing :
 
-    template <> struct Serializer<std::int8_t>{static void write(BinaryWriter& w, std::int8_t v) {w.writeI8(v);}};
-    template <> struct Serializer<std::int16_t>{static void write(BinaryWriter& w, std::int16_t v) {w.writeI16(v);}};
-    template <> struct Serializer<std::int32_t>{static void write(BinaryWriter& w, std::int32_t v) {w.writeI32(v);}};
-    template <> struct Serializer<std::int64_t>{static void write(BinaryWriter& w, std::int64_t v) {w.writeI64(v);}};
+    template <> struct Serializer<std::int8_t>{static void write(BinaryWriter& w, std::int8_t const v) {w.writeI8(v);}};
+    template <> struct Serializer<std::int16_t>{static void write(BinaryWriter& w, std::int16_t const v) {w.writeI16(v);}};
+    template <> struct Serializer<std::int32_t>{static void write(BinaryWriter& w, std::int32_t const v) {w.writeI32(v);}};
+    template <> struct Serializer<std::int64_t>{static void write(BinaryWriter& w, std::int64_t const v) {w.writeI64(v);}};
 
     // other useful types :
 
-    template <> struct Serializer<bool>{static void write(BinaryWriter& w, bool v) {w.writeBool(v);}};
-    template <> struct Serializer<float>{static void write(BinaryWriter& w, float v) {w.writeF32(v);}};
-    template <> struct Serializer<double>{static void write(BinaryWriter& w, double v) {w.writeF64(v);}};
+    template <> struct Serializer<bool>{static void write(BinaryWriter& w, bool const v) {w.writeBool(v);}};
+    template <> struct Serializer<float>{static void write(BinaryWriter& w, float const v) {w.writeF32(v);}};
+    template <> struct Serializer<double>{static void write(BinaryWriter& w, double const v) {w.writeF64(v);}};
 
-    template <> struct Serializer<std::span<const std::byte>>{static void write(BinaryWriter& w, std::span<const std::byte> v)
+    template <> struct Serializer<std::span<const std::byte>>{static void write(BinaryWriter& w, std::span<const std::byte> const v)
     {
         if (v.size() > std::numeric_limits<uint32_t>::max())
             throw std::length_error("Byte blob too large");
@@ -60,6 +61,16 @@ namespace AC_Save
             w.writeU32(static_cast<std::uint32_t>(items.size()));
             for (const T& it : items)
                 Serializer<T>::write(w, it);
+        }
+    };
+
+    template <class E> requires std::is_enum_v<E>
+    struct Serializer<E>
+    {
+        static void write(BinaryWriter& w, E v)
+        {
+            using U = std::underlying_type_t<E>;
+            Serializer<U>::write(w, static_cast<U>(v));
         }
     };
 }
