@@ -195,7 +195,7 @@ int main()
         adapters.save(std::filesystem::path{"a-directory-that-does-not-exist"} /
                       "archive.acsa");
     });
-    expect(!std::filesystem::exists("a-directory-that-does-not-exist"), 
+    expect(!std::filesystem::exists("a-directory-that-does-not-exist"),
            "failed save must not create a partial destination");
 
     std::string altered = encoded;
