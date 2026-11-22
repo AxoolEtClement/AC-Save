@@ -15,6 +15,10 @@ ctest --test-dir build --output-on-failure
 ./build/AC-saveDemo   # creates demo.acsa
 ```
 
+The demo creates `general-purpose.acsa` and two archives,
+`material-v1.acsa` and `material-v2.acsa`, to demonstrate a reusable adapter
+and two schema versions.
+
 ## Binary format
 
 All integers are fixed-width little-endian values. The 32-byte header contains
@@ -37,13 +41,22 @@ and container internals never become persistent data. Version migration is
 represented by the `schemaVersion` entry field; adapters should provide
 defaults when reading an older schema.
 
+The demo contains two adapters unrelated to physics:
+
+- `Material`: a UTF-8 name and a collection of floating-point coefficients.
+- `LibraryEntry`: a UTF-8 title, a year and a boolean.
+
+Their `Serializer<T>` specializations demonstrate adding domain types without
+modifying the archive core or the binary writer.
+
 ## Scope and limitations
 
 The current tests validate serialization of strings, sequences and multiple
-assets, deterministic offsets and CRC generation, empty archives, invalid IDs,
-unknown types and duplicate IDs. Physics scene/state adapters, schema
-migration readers, corruption/truncation rejection and performance
-measurements remain project-level work for the complete pair submission.
+assets, custom adapters, UTF-8 strings, deterministic offsets and CRC
+generation, empty archives, invalid IDs, unknown types, duplicate IDs, atomic
+file saving and write failures. Corrupted/truncated archive rejection, schema
+migration readers and performance measurements remain project-level work for
+the complete pair submission.
 CRC-32 is an integrity check only; archives are not encrypted or authenticated.
 
 ## Usage
