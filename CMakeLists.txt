@@ -29,6 +29,9 @@ target_include_directories(AC-saveLib INTERFACE
 )
 
 target_link_libraries(AC-saveDemo PRIVATE AC-saveLib)
+if(WIN32)
+    target_link_libraries(AC-saveDemo PRIVATE psapi)
+endif()
 
 if(BUILD_TESTING)
     enable_testing()
