@@ -2,22 +2,20 @@
 
 namespace AC_Save
 {
-    inline void BinaryReader::load(const std::filesystem::path &path)
+    inline BinaryReader::BinaryReader(std::span<const std::byte> bytes) noexcept
+        : m_bytes(bytes), m_cursor(0)
     {
-        std::ifstream file(path, std::ios::binary|std::ios::ate);
-        if (!file)
-            throw std::runtime_error("Cannot open file");
+    }
 
-        const auto fileSize = file.tellg();
-        if (fileSize < 0)
-            throw std::runtime_error("failed to determine file size");
-
-        m_bytes.resize(fileSize);
+    inline void BinaryReader::setView(std::span<const std::byte> bytes) noexcept
+    {
+        m_bytes = bytes;
         m_cursor = 0;
+    }
 
-        file.seekg(0, std::ios::beg);
-        if (!file.read(reinterpret_cast<char*>(m_bytes.data()), static_cast<std::streamsize>(m_bytes.size())))
-            throw std::runtime_error("failed to read file");
+    inline std::size_t BinaryReader::remaining() const noexcept
+    {
+        return m_cursor <= m_bytes.size() ? m_bytes.size() - m_cursor : 0;
     }
 
     inline std::uint8_t BinaryReader::readU8() { return readUI<uint8_t>(); }
@@ -44,15 +42,14 @@ namespace AC_Save
     inline float BinaryReader::readF32() { return std::bit_cast<float>(readUI<uint32_t>()); }
     inline double BinaryReader::readF64() { return std::bit_cast<double>(readUI<uint64_t>()); }
 
-    inline Bytes BinaryReader::readBytes()
+    inline Bytes BinaryReader::readBytesCount(std::size_t count)
     {
-        std::uint32_t byteSize{ readUI<std::uint32_t>() };
-        if (m_cursor > m_bytes.size() || m_bytes.size() - m_cursor < byteSize)
-            throw std::runtime_error("File is too small to read data of size " + std::to_string(byteSize));
+        if (m_cursor > m_bytes.size() || m_bytes.size() - m_cursor < count)
+            throw std::runtime_error("File is too small to read data of size " + std::to_string(count));
 
-        Bytes result{};
-        result.resize(byteSize);
-        for (std::uint32_t i = 0; i < byteSize; ++i)
+        Bytes result;
+        result.resize(count);
+        for (std::size_t i = 0; i < count; ++i)
         {
             result[i] = m_bytes[m_cursor++];
         }
