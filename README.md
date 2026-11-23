@@ -46,7 +46,7 @@ The demo contains two adapters:
 
 Their `Serializer<T>` specializations demonstrate adding domain types without
 modifying the archive core or the binary writer.
-Their `Deserializr<T>` specializations have the same purpose with added purpose of showing how to properly handle different schemaVersion if need be.
+Their `Deserializer<T>` specializations have the same purpose with added purpose of showing how to properly handle different schemaVersion if need be.
 
 ## Scope and limitations
 
@@ -134,5 +134,21 @@ To read assets, we call `ArchiveReader::readAsset<*type*>(*assetId*)`, the deser
 specified type and if the materialId provided doesn't exist in the archive, the functions throws an exception.
 `ArchiveReader::findEntry(*assetId*)` gives asset data (id, type, schemaVersion, offset, size, crc)
 
+## Measurements
+
+| Batch size | Save time | Load Time | tmp memory save | tmp memory read |
+| :--- | :---: | :---: | :---: | ---: |
+| 100 | 5.4671 ms | 0.8867 ms |36.56 kb|25.35kb  |
+| 1 000 | 10.5505 ms | 4.7441 ms |281.28 kb|194.40kb  |
+
+![img.png](img.png)
+
+## Work attribution
+
+Axel Martin : Reader, Tests and Deserializer
+
+Clément Bobeda : Writer, Tests and Serializer
+
+---
 AI assistance was used for code cleanup and test design. All generated changes
 were compiled and verified with the test command above.
