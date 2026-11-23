@@ -2,9 +2,7 @@
 #include "binaryReader.hpp"
 
 #include <concepts>
-#include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -12,10 +10,10 @@
 
 namespace AC_Save
 {
+    // main template to specialize from
     template <class T>
     struct Deserializer;
-    // Mirrors `writable` in coreSerializer.hpp, except `read` takes `BinaryReader&`
-    // and returns `T` by value instead of taking `const T&`.
+
     template <class T>
     concept readable = requires(BinaryReader& r) {
         { Deserializer<T>::read(r) } -> std::convertible_to<T>;
@@ -45,7 +43,6 @@ namespace AC_Save
     struct Deserializer<std::int64_t> {[[nodiscard]] static std::int64_t read(BinaryReader& r) { return r.readI64(); }};
 
     // Other useful types
-
     template <>
     struct Deserializer<bool> {[[nodiscard]] static bool read(BinaryReader& r) { return r.readBool(); }};
     template <>
@@ -64,7 +61,7 @@ namespace AC_Save
         [[nodiscard]] static std::vector<T> read(BinaryReader& r)
         {
             const std::uint32_t count = r.readU32();
-            
+
             if (count > r.remaining())
                 throw std::length_error("Sequence count exceeds remaining bytes");
 
