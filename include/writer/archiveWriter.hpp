@@ -1,6 +1,6 @@
 #pragma once
 
-#include "binary_writer/assetId.hpp"
+#include "writer/assetId.hpp"
 
 #include <filesystem>
 #include <ostream>
@@ -50,4 +50,4 @@ namespace AC_Save
     };
 }
 
-#include "binary_writer/archiveWriter.inl"
+#include "writer/archiveWriter.inl"

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "binary_writer/assetId.hpp"
+#include "writer/assetId.hpp"
 #include "binaryReader.hpp"
 #include "Deserializer.hpp"
-#include "binary_writer/archiveWriter.hpp"
+#include "writer/archiveWriter.hpp"
 
 #include <cstddef>
 #include <cstdint>

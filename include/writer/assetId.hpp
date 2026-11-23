@@ -1,6 +1,6 @@
 #pragma once
 
-#include "binary_writer/coreSerializer.hpp"
+#include "writer/coreSerializer.hpp"
 
 #include <compare>
 #include <cstdint>

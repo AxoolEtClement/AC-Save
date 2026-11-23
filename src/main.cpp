@@ -1,5 +1,5 @@
-#include "binary_writer/archiveWriter.hpp"
-#include "binary_reader/archiveReader.hpp"
+#include "writer/archiveWriter.hpp"
+#include "reader/archiveReader.hpp"
 
 #include <chrono>
 #include <filesystem>
@@ -204,18 +204,16 @@ int main()
         .coefficients = {0.8f, 0.6f, 0.2f},
         .roughness = 0.8f
     };
-
+    const LibraryEntry library{
+        .title = "Binary archives",
+        .year = 2026,
+        .available = true
+    };
     constexpr auto materialId = AC_Save::makeAssetId("material");
     constexpr auto libraryId = AC_Save::makeAssetId("library");
 
     // 1. writing to archives
     {
-        const LibraryEntry library{
-            .title = "Binary archives",
-            .year = 2026,
-            .available = true
-        };
-
         AC_Save::ArchiveWriter archive;
         archive.addAsset(materialId,
                          AC_Save::AssetType::Texture, 2, material2);
@@ -283,12 +281,6 @@ int main()
             printMaterial(v2Reader.readAsset<Material>(materialId));
         }
     }
-
-    const LibraryEntry library{
-        .title = "Binary archives",
-        .year = 2026,
-        .available = true
-    };
 
     runMeasurement(100, library);
     runMeasurement(1000, library);
