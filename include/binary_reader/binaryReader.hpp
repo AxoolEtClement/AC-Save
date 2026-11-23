@@ -4,6 +4,9 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <bit>
+#include <concepts>
+#include <stdexcept>
 
 typedef std::vector<std::byte> Bytes;
 
@@ -16,6 +19,7 @@ namespace AC_Save
         ~BinaryReader() = default;
 
         void load(const std::filesystem::path& path);
+        [[nodiscard]] std::size_t remaining() const noexcept;
 
         std::uint8_t readU8();
         std::uint16_t readU16();

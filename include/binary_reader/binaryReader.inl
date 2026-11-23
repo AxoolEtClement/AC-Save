@@ -20,6 +20,11 @@ namespace AC_Save
             throw std::runtime_error("failed to read file");
     }
 
+    inline std::size_t BinaryReader::remaining() const noexcept
+    {
+        return m_cursor <= m_bytes.size() ? m_bytes.size() - m_cursor : 0;
+    }
+
     inline std::uint8_t BinaryReader::readU8() { return readUI<uint8_t>(); }
     inline std::uint16_t BinaryReader::readU16() { return readUI<uint16_t>(); }
     inline std::uint32_t BinaryReader::readU32() { return readUI<uint32_t>(); }
