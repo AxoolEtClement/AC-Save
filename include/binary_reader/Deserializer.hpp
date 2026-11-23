@@ -51,7 +51,7 @@ namespace AC_Save
     struct Deserializer<double> {[[nodiscard]] static double read(BinaryReader& r) { return r.readF64(); }};
 
     template <>
-    struct Deserializer<Bytes> {[[nodiscard]] static Bytes read(BinaryReader& r) { return r.readBytes(); }};
+    struct Deserializer<Bytes> {[[nodiscard]] static Bytes read(BinaryReader& r) { std::uint32_t count = r.readU32(); return r.readBytesCount(count); }};
     template <>
     struct Deserializer<std::string> {[[nodiscard]] static std::string read(BinaryReader& r) { return r.readString(); }};
 

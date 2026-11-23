@@ -1,7 +1,5 @@
 #pragma once
 #include <cstdint>
-#include <filesystem>
-#include <fstream>
 #include <string>
 #include <vector>
 #include <bit>
@@ -16,10 +14,13 @@ namespace AC_Save
     {
     public:
         BinaryReader() = default;
+        explicit BinaryReader(std::span<const std::byte> bytes) noexcept;
         ~BinaryReader() = default;
 
-        void load(const std::filesystem::path& path);
+        void setView(std::span<const std::byte> bytes) noexcept;
         [[nodiscard]] std::size_t remaining() const noexcept;
+
+        [[nodiscard]] Bytes readBytesCount(std::size_t count);
 
         std::uint8_t readU8();
         std::uint16_t readU16();
@@ -35,12 +36,11 @@ namespace AC_Save
         float readF32();
         double readF64();
 
-        Bytes readBytes();
         std::string readString();
     private:
         template<std::unsigned_integral T>
         T readUI();
-        Bytes m_bytes{};
+        std::span<const std::byte> m_bytes;
         std::size_t m_cursor{};
     };
 }
