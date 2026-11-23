@@ -284,6 +284,12 @@ int main()
         }
     }
 
+    const LibraryEntry library{
+        .title = "Binary archives",
+        .year = 2026,
+        .available = true
+    };
+
     runMeasurement(100, library);
     runMeasurement(1000, library);
 
