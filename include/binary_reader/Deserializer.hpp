@@ -15,9 +15,17 @@ namespace AC_Save
     struct Deserializer;
 
     template <class T>
-    concept readable = requires(BinaryReader& r) {
-        { Deserializer<T>::read(r) } -> std::convertible_to<T>;
+    concept unversioned_readable = requires(BinaryReader& r) {
+            { Deserializer<T>::read(r) } -> std::convertible_to<T>;
     };
+
+    template <class T>
+    concept versioned_readable = requires(BinaryReader& r, std::uint16_t schemaVersion) {
+        { Deserializer<T>::read(r, schemaVersion) } -> std::convertible_to<T>;
+    };
+
+    template <class T>
+    concept readable = unversioned_readable<T> || versioned_readable<T>;
 
     template <readable T>
     [[nodiscard]] T read(BinaryReader& r) {return Deserializer<T>::read(r);}

@@ -3,28 +3,35 @@
 
 #include <chrono>
 #include <filesystem>
-#include <iostream>
-#include <string>
-#include <vector>
-
 #ifdef _WIN32
 #include <windows.h>
 #include <psapi.h>
 #endif
 
+#include <iostream>
+#include <string>
+#include <vector>
+
 namespace
 {
-    struct Material
+    struct MaterialV1
     {
         std::string name;
         std::vector<float> coefficients;
     };
 
+    struct Material
+    {
+        std::string name;
+        std::vector<float> coefficients;
+        float roughness = 0.5;
+    };
+
     struct LibraryEntry
     {
         std::string title;
-        std::uint32_t year;
-        bool available;
+        std::uint32_t year{};
+        bool available{};
     };
 }
 
@@ -32,6 +39,17 @@ template <>
 struct AC_Save::Serializer<Material>
 {
     static void write(AC_Save::BinaryWriter& writer, const Material& value)
+    {
+        AC_Save::write(writer, value.name);
+        AC_Save::write(writer, value.coefficients);
+        AC_Save::write(writer, value.roughness);
+    }
+};
+
+template <>
+struct AC_Save::Serializer<MaterialV1>
+{
+    static void write(AC_Save::BinaryWriter& writer, const MaterialV1& value)
     {
         AC_Save::write(writer, value.name);
         AC_Save::write(writer, value.coefficients);
@@ -52,11 +70,24 @@ struct AC_Save::Serializer<LibraryEntry>
 template <>
 struct AC_Save::Deserializer<Material>
 {
-    [[nodiscard]] static Material read(AC_Save::BinaryReader& reader)
+    [[nodiscard]] static Material read(AC_Save::BinaryReader& reader, std::uint16_t schemaVersion)
     {
-        Material value;
-        value.name = AC_Save::read<std::string>(reader);
-        value.coefficients = AC_Save::read<std::vector<float>>(reader);
+        Material value{};
+        if (schemaVersion == 1)
+        {
+            value.name = AC_Save::read<std::string>(reader);
+            value.coefficients = AC_Save::read<std::vector<float>>(reader);
+        }
+        else if (schemaVersion == 2)
+        {
+            value.name = AC_Save::read<std::string>(reader);
+            value.coefficients = AC_Save::read<std::vector<float>>(reader);
+            value.roughness = AC_Save::read<float>(reader);
+        }
+        else
+        {
+            throw std::runtime_error("Unsupported schemaVersion: " + std::to_string(schemaVersion));
+        }
         return value;
     }
 };
@@ -86,6 +117,7 @@ namespace
             std::cout << m.coefficients[i];
         }
         std::cout << "]\n";
+        std::cout << "roughness: " << m.roughness << "\n";
     }
 
     void printLibraryEntry(const LibraryEntry& entry)
@@ -163,68 +195,93 @@ int main()
     SetConsoleCP(CP_UTF8);
 #endif
 
-    AC_Save::ArchiveWriter archive;
-    const Material material{std::string{"metal \xE2\x98\x85"}, {0.8f, 0.6f, 0.2f}};
-    const LibraryEntry library{"Binary archives", 2026, true};
+    const MaterialV1 material1{
+        .name = std::string{"metal \xE2\x98\x85"},
+        .coefficients = {0.8f, 0.6f, 0.2f}
+    };
+    const Material material2{
+        .name = std::string{"metal \xE2\x98\x85"},
+        .coefficients = {0.8f, 0.6f, 0.2f},
+        .roughness = 0.8f
+    };
 
     constexpr auto materialId = AC_Save::makeAssetId("material");
     constexpr auto libraryId = AC_Save::makeAssetId("library");
 
-    archive.addAsset(AC_Save::makeAssetId("material"),
-                     AC_Save::AssetType::Texture, 1, material);
-    archive.addAsset(AC_Save::makeAssetId("library"),
-                     AC_Save::AssetType::Mesh, 1, library);
-    archive.save("general-purpose.acsa");
+    // 1. writing to archives
+    {
+        const LibraryEntry library{
+            .title = "Binary archives",
+            .year = 2026,
+            .available = true
+        };
 
-    AC_Save::ArchiveWriter schemaV1;
-    schemaV1.addAsset(AC_Save::makeAssetId("material"),
-                      AC_Save::AssetType::Texture, 1, material);
-    schemaV1.save("material-v1.acsa");
+        AC_Save::ArchiveWriter archive;
+        archive.addAsset(materialId,
+                         AC_Save::AssetType::Texture, 2, material2);
+        archive.addAsset(libraryId,
+                         AC_Save::AssetType::Mesh, 1, library);
+        archive.save("general-purpose.acsa");
+    }
 
-    AC_Save::ArchiveWriter schemaV2;
-    schemaV2.addAsset(AC_Save::makeAssetId("material"),
-                      AC_Save::AssetType::Texture, 2, material);
-    schemaV2.save("material-v2.acsa");
+    {
+        AC_Save::ArchiveWriter archive;
+        archive.addAsset(materialId,
+                          AC_Save::AssetType::Texture, 1, material1);
+        archive.save("material-v1.acsa");
+    }
+
+    {
+        AC_Save::ArchiveWriter archive;
+        archive.addAsset(materialId,
+                          AC_Save::AssetType::Texture, 2, material2);
+        archive.save("material-v2.acsa");
+    }
 
     std::cout << "Wrote general-purpose.acsa and material-v1/v2 archives\n";
 
-
-    AC_Save::ArchiveReader reader("general-purpose.acsa");
-    std::cout << "general-purpose.acsa -> version: " << reader.version()
-              << ", entries: " << reader.entries().size() << '\n';
-
-    if (const auto* matEntry = reader.findEntry(materialId))
+    // 2. Read general archive
     {
-        std::cout << "[material] id=" << matEntry->id.raw()
-                  << ", schemaVersion=" << matEntry->schemaVersion
-                  << ", size=" << matEntry->size << '\n';
-        printMaterial(reader.readAsset<Material>(materialId));
+        AC_Save::ArchiveReader reader("general-purpose.acsa");
+        std::cout << "general-purpose.acsa -> version: " << reader.version()
+                  << ", entries: " << reader.entries().size() << '\n';
+
+        if (const auto* matEntry = reader.findEntry(materialId))
+        {
+            std::cout << "[material] id=" << matEntry->id.raw()
+                      << ", schemaVersion=" << matEntry->schemaVersion
+                      << ", size=" << matEntry->size << '\n';
+            printMaterial(reader.readAsset<Material>(materialId));
+        }
+
+        if (const auto* libEntry = reader.findEntry(libraryId))
+        {
+            std::cout << "[library] id=" << libEntry->id.raw()
+                      << ", schemaVersion=" << libEntry->schemaVersion
+                      << ", size=" << libEntry->size << '\n';
+            printLibraryEntry(reader.readAsset<LibraryEntry>(libraryId));
+        }
+
+        std::cout << '\n';
     }
 
-    if (const auto* libEntry = reader.findEntry(libraryId))
+    // 3. Read and print schema versions from material v1 and v2
     {
-        std::cout << "[library] id=" << libEntry->id.raw()
-                  << ", schemaVersion=" << libEntry->schemaVersion
-                  << ", size=" << libEntry->size << '\n';
-        printLibraryEntry(reader.readAsset<LibraryEntry>(libraryId));
+        AC_Save::ArchiveReader v1Reader("material-v1.acsa");
+        if (const auto* v1Entry = v1Reader.findEntry(materialId))
+        {
+            std::cout << "material-v1.acsa -> schemaVersion=" << v1Entry->schemaVersion << '\n';
+            printMaterial(v1Reader.readAsset<Material>(materialId));
+        }
     }
 
-    std::cout << '\n';
-
-    // 3. Read and print schema versions from v1 and v2
-    AC_Save::ArchiveReader v1Reader("material-v1.acsa");
-    AC_Save::ArchiveReader v2Reader("material-v2.acsa");
-
-    if (const auto* v1Entry = v1Reader.findEntry(materialId))
     {
-        std::cout << "material-v1.acsa -> schemaVersion=" << v1Entry->schemaVersion << '\n';
-        printMaterial(v1Reader.readAsset<Material>(materialId));
-    }
-
-    if (const auto* v2Entry = v2Reader.findEntry(materialId))
-    {
-        std::cout << "material-v2.acsa -> schemaVersion=" << v2Entry->schemaVersion << '\n';
-        printMaterial(v2Reader.readAsset<Material>(materialId));
+        AC_Save::ArchiveReader v2Reader("material-v2.acsa");
+        if (const auto* v2Entry = v2Reader.findEntry(materialId))
+        {
+            std::cout << "material-v2.acsa -> schemaVersion=" << v2Entry->schemaVersion << '\n';
+            printMaterial(v2Reader.readAsset<Material>(materialId));
+        }
     }
 
     runMeasurement(100, library);

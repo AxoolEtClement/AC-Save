@@ -85,8 +85,19 @@ namespace AC_Save
     template<readable T>
     T ArchiveReader::readAsset(AssetId id) const
     {
+        const AssetEntry& entry = requireEntry(id);
         BinaryReader payloadReader(payloadView(id));
-        return read<T>(payloadReader);
+
+        if constexpr (requires(BinaryReader& r, std::uint16_t ver) {
+                          { Deserializer<T>::read(r, ver) } -> std::convertible_to<T>;
+                      })
+        {
+            return Deserializer<T>::read(payloadReader, entry.schemaVersion);
+        }
+        else
+        {
+            return Deserializer<T>::read(payloadReader);
+        }
     }
 
     inline void ArchiveReader::parseAndValidate()
